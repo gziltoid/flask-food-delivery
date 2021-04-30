@@ -16,7 +16,7 @@ orders_dishes_association = db.Table(
 
 
 class User(db.Model):
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
@@ -27,30 +27,38 @@ class User(db.Model):
 
 
 class Dish(db.Model):
-    __tablename__ = 'dishes'
+    __tablename__ = "dishes"
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
     price = db.Column(db.Integer)
     description = db.Column(db.Text)
     picture = db.Column(db.String)
-    categories = db.relationship("Category", secondary=categories_dishes_association, back_populates="dishes")
-    orders = db.relationship("Order", secondary=orders_dishes_association, back_populates="dishes")
+    categories = db.relationship(
+        "Category", secondary=categories_dishes_association, back_populates="dishes"
+    )
+    orders = db.relationship(
+        "Order", secondary=orders_dishes_association, back_populates="dishes"
+    )
 
 
 class Category(db.Model):
-    __tablename__ = 'categories'
+    __tablename__ = "categories"
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String, nullable=False)
-    dishes = db.relationship("Dish", secondary=categories_dishes_association, back_populates="categories")
+    title = db.Column(db.String, nullable=False, unique=True)
+    dishes = db.relationship(
+        "Dish", secondary=categories_dishes_association, back_populates="categories"
+    )
 
 
 class Order(db.Model):
-    __tablename__ = 'orders'
+    __tablename__ = "orders"
 
     id = db.Column(db.Integer, primary_key=True)
     order_date = db.Column(db.String, nullable=False)
     total = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String, nullable=False)
-    dishes = db.relationship("Dish", secondary=orders_dishes_association, back_populates="orders")
+    dishes = db.relationship(
+        "Dish", secondary=orders_dishes_association, back_populates="orders"
+    )
