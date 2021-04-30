@@ -15,7 +15,7 @@ if DB_URI.startswith("postgres://"):
     DB_URI = DB_URI.replace("postgres://", "postgresql://", 1)
 
 app.config.update(
-    DEBUG=False,
+    DEBUG=True,
     SQLALCHEMY_ECHO=False,
     SECRET_KEY=os.getenv("SECRET_KEY"),
     SQLALCHEMY_DATABASE_URI=DB_URI,
