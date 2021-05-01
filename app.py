@@ -3,10 +3,9 @@ import os
 import sys
 
 from dotenv import load_dotenv, find_dotenv
+from flask import Flask, render_template, redirect, url_for
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-
-from views import app
 
 load_dotenv(find_dotenv())
 
@@ -14,6 +13,7 @@ DB_URI = os.getenv("DATABASE_URL")
 if DB_URI.startswith("postgres://"):
     DB_URI = DB_URI.replace("postgres://", "postgresql://", 1)
 
+app = Flask(__name__)
 app.config.update(
     DEBUG=True,
     SQLALCHEMY_ECHO=False,
@@ -119,13 +119,65 @@ def seed():
         dish = Dish(
             title=d["title"],
             price=d["price"],
-            description=d["title"],
-            picture=d["title"]
+            description=d["description"],
+            picture=d["picture"]
         )
         cat = Category.query.filter(Category.id == d["category_id"]).one()
         dish.categories.append(cat)
         db.session.add(dish)
     db.session.commit()
+
+
+@app.route("/")
+def index_view():
+    print('Main page')
+    categories = Category.query.all()
+    return render_template("main.html", categories=categories)
+
+
+@app.route("/cart/")
+def cart_view():
+    return render_template("cart.html")
+
+
+@app.route("/ordered/")
+def ordered_view():
+    return render_template("ordered.html")
+
+
+@app.route("/account/")
+def account_view():
+    return render_template("account.html")
+
+
+@app.route("/register/")
+def register_view():
+    return render_template("register.html")
+
+
+@app.route("/auth/")
+def auth_view():
+    return render_template("auth.html")
+
+
+@app.route("/login/")
+def login_view():
+    return render_template("login.html")
+
+
+@app.route("/logout/")
+def logout_view():
+    return redirect(url_for("auth_view"))
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("404.html", error=error), 404
+
+
+@app.errorhandler(500)
+def page_server_error(error):
+    return f"Something happened but we're fixing it: {error}", 500
 
 
 if __name__ == "__main__":

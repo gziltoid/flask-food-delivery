@@ -3,188 +3,32 @@
 
 {% include 'jumbotron.html' %}
 {% block container %}
-    <section>
-        <h3 class="my-4">Суши</h3>
-        <div class="row mt-4">
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <h4 class="h5 card-title">Ролл Тьюринг</h4>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the
-                            card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <h4 class="h5 card-title">Ролл "Хомский"</h4>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the
-                            card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <h4 class="h5 card-title">Острый ролл "Ада"</h4>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the
-                            card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    {% for category in categories %}
 
-    <section>
-        <h3 class="my-4">Стритфуд</h3>
-        <div class="row mt-4">
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <h4 class="h5 card-title">Гриль 500</h4>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the
-                            card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <h4 class="h5 card-title">Бургер 404</h4>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the
-                            card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top">
-                    <div class="card-body">
-                        <h4 class="h5 card-title">Ролл 301</h4>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the
-                            card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+        <section>
+            <h3 class="my-4">{{ category.title }}</h3>
+            <div class="row mt-4">
 
-    <section>
-        <h3 class="my-4">Пицца</h3>
-        <div class="row mt-4">
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <h4 class="card-title">Пицца "Армин"</h4>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the
-                            card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <h4 class="card-title">Пицца "Гвидо"</h4>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the
-                            card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <h4 class="card-title">Пицца "Марк и Якоб"</h4>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the
-                            card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <section>
-        <h3 class="my-4">Новинки</h3>
-        <div class="row mt-4">
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <div class="row ">
-                            <h5 class="col-6 card-title">Card title</h5>
-                            <h5 class="col-6 card-title text-right">360 Р</h5>
+                {% for dish in category.dishes %}
+
+                    <div class="col-12 col-md-4 mb-4 ">
+                        <div class="card mb-3 h-100">
+
+                            <img src="{{ url_for('static', filename='pictures/') }}{{ dish.picture }}" width="300" height="200"
+                                 class="card-img-top img-fluid" alt="">
+
+                            <div class="card-body">
+                                <h4 class="h5 card-title">{{ dish.title }}</h4>
+                                <p class="card-text">{{ dish.description }}</p>
+                                <a href="{{ url_for('cart_view') }}" class="btn btn-danger">В корзину
+                                    ({{ dish.price }}
+                                    ₽)</a>
+                            </div>
                         </div>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
                     </div>
-                </div>
+                {% endfor %}
             </div>
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <div class="row ">
-                            <h5 class="col-6 card-title">Card title</h5>
-                            <h5 class="col-6 card-title text-right">420 Р</h5>
-                        </div>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="card mb-3">
-                    <img src=https://place-hold.it/300x200 width="300" height="200" class="card-img-top" alt="">
-                    <div class="card-body">
-                        <div class="row ">
-                            <h5 class="col-6 card-title">Card title</h5>
-                            <h5 class="col-6 card-title text-right">310 Р</h5>
-                        </div>
-                        <p class="card-text">Some quick example text to build on the card title and make up the bulk
-                            of
-                            the card's content.</p>
-                        <a href="/addtocart1/" class="btn btn-danger">В корзину</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+        </section>
+
+    {% endfor %}
 {% endblock %}
