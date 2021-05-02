@@ -3,17 +3,27 @@ import os
 import sys
 
 from dotenv import load_dotenv, find_dotenv
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, request
+from flask.globals import session
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
+from flask_wtf.form import FlaskForm
+from sqlalchemy import func
+from wtforms.fields.core import StringField
+from wtforms.fields.html5 import EmailField, TelField
+from wtforms.fields.simple import SubmitField
+from wtforms.validators import DataRequired, Length, Email
 
 load_dotenv(find_dotenv())
+
+app = Flask(__name__)
+csrf = CSRFProtect(app)
 
 DB_URI = os.getenv("DATABASE_URL")
 if DB_URI.startswith("postgres://"):
     DB_URI = DB_URI.replace("postgres://", "postgresql://", 1)
 
-app = Flask(__name__)
 app.config.update(
     DEBUG=True,
     SQLALCHEMY_ECHO=False,
@@ -21,6 +31,7 @@ app.config.update(
     SQLALCHEMY_DATABASE_URI=DB_URI,
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
 )
+app.debug = True
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -79,10 +90,10 @@ class Order(db.Model):
     __tablename__ = "orders"
 
     id = db.Column(db.Integer, primary_key=True)
-    order_date = db.Column(db.String, nullable=False)
+    order_date = db.Column(db.DateTime, default=func.now())
     total = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String, nullable=False)
-    mail = db.Column(db.String, nullable=False, unique=True)
+    mail = db.Column(db.String, nullable=False)
     phone = db.Column(db.String(15), nullable=False)
     address = db.Column(db.String, nullable=False)
     dishes = db.relationship(
@@ -90,6 +101,30 @@ class Order(db.Model):
     )
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     user = db.relationship("User", back_populates="orders")
+
+
+class OrderForm(FlaskForm):
+    name = StringField(
+        "Ваше имя", [DataRequired(), Length(max=50, message="Слишком длинное имя")]
+    )
+    address = StringField(
+        "Адрес", [DataRequired(), Length(max=200, message="Слишком длинный адрес")]
+    )
+    email = EmailField(
+        "Электропочта", [DataRequired(), Email(message="Неверный формат почты")]
+    )
+    phone = TelField(
+        "Телефон",
+        [
+            DataRequired(),
+            Length(
+                min=10,
+                max=15,
+                message="Номер должен состоять из %(min)d-%(max)d символов",
+            ),
+        ],
+    )
+    submit = SubmitField("Оформить заказ")
 
 
 def load_data_from_csv(filename):
@@ -128,16 +163,48 @@ def seed():
     db.session.commit()
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index_view():
-    print('Main page')
     categories = Category.query.all()
+
+    if request.method == "POST":
+        cart = session.get("cart", [])
+        dish_id = int(request.form.get('dish'))
+        cart.append(dish_id)
+        session["user_id"] = 1
+        session['cart'] = cart
+        # TODO flash()
+        # print(session['cart'])
+        return redirect(url_for('cart_view'))
+
     return render_template("main.html", categories=categories)
 
 
-@app.route("/cart/")
+@app.route("/cart/", methods=["GET", "POST"])
 def cart_view():
-    return render_template("cart.html")
+    print(session.get("cart"))
+
+    form = OrderForm()
+    if form.validate_on_submit():
+        user = User.query.get_or_404(session["user_id"], "The user is not found.")
+        order = Order(
+            phone=form.phone.data,
+            address=form.address.data,
+            mail=form.email.data,
+            total=request.form.get('order_summ'),
+            status='Принято',
+            user_id=user.id
+        )
+        cart = session.get("cart", [])
+        for item_id in cart:
+            dish = Dish.query.get_or_404(item_id, "The dish is not found.")
+            order.dishes.append(dish)
+        # TODO order.save()
+        db.session.add(order)
+        db.session.commit()
+        return redirect(url_for('ordered_view'))
+
+    return render_template("cart.html", form=form)
 
 
 @app.route("/ordered/")

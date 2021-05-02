@@ -1,34 +1,44 @@
 {% extends 'base.html' %}
+
 {% include 'navbar.html' %}
 
-{% include 'jumbotron.html' %}
-{% block container %}
-    {% for category in categories %}
+<main class="container mt-3">
+    {% include 'jumbotron.html' %}
 
-        <section>
-            <h3 class="my-4">{{ category.title }}</h3>
-            <div class="row mt-4">
+    {% block container %}
 
-                {% for dish in category.dishes %}
+        {% for category in categories %}
 
-                    <div class="col-12 col-md-4 mb-4 ">
-                        <div class="card mb-3 h-100">
+            <section>
+                <h3 class="my-4">{{ category.title }}</h3>
+                <div class="row mt-4">
 
-                            <img src="{{ url_for('static', filename='pictures/') }}{{ dish.picture }}" width="300" height="200"
-                                 class="card-img-top img-fluid" alt="">
+                    {% for dish in category.dishes %}
 
-                            <div class="card-body">
-                                <h4 class="h5 card-title">{{ dish.title }}</h4>
-                                <p class="card-text">{{ dish.description }}</p>
-                                <a href="{{ url_for('cart_view') }}" class="btn btn-danger">В корзину
-                                    ({{ dish.price }}
-                                    ₽)</a>
+                        <div class="col-12 col-md-4 mb-4 ">
+                            <div class="card mb-3 h-100">
+
+                                <img src="{{ url_for('static', filename='pictures/') }}{{ dish.picture }}" width="300"
+                                     height="200"
+                                     class="card-img-top img-fluid" alt="">
+
+                                <div class="card-body d-flex flex-column">
+                                    <h4 class="h5 card-title">{{ dish.title }}</h4>
+                                    <p class="card-text">{{ dish.description }}</p>
+                                    <form action="{{ url_for('index_view') }}" method="post"
+                                          class="align-self-start mt-auto">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <input class="form-control" type="hidden" name="dish" value="{{ dish.id }}">
+                                        <input type="submit" class="btn btn-danger"
+                                               value="В корзину ({{ dish.price }} ₽)"/>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </section>
+                    {% endfor %}
+                </div>
+            </section>
 
-    {% endfor %}
-{% endblock %}
+        {% endfor %}
+    {% endblock %}
+</main>
