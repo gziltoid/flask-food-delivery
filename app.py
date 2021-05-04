@@ -3,8 +3,7 @@ import os
 import sys
 
 from dotenv import load_dotenv, find_dotenv
-from flask import Flask, render_template, redirect, url_for, request
-from flask.globals import session
+from flask import Flask, render_template, redirect, url_for, request, session
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
@@ -12,7 +11,7 @@ from flask_wtf.form import FlaskForm
 from sqlalchemy import func
 from wtforms.fields.core import StringField
 from wtforms.fields.html5 import EmailField, TelField
-from wtforms.fields.simple import SubmitField
+from wtforms.fields.simple import SubmitField, PasswordField
 from wtforms.validators import DataRequired, Length, Email
 
 load_dotenv(find_dotenv())
@@ -103,6 +102,15 @@ class Order(db.Model):
     user = db.relationship("User", back_populates="orders")
 
 
+class LoginForm(FlaskForm):
+    email = EmailField(
+        "Электропочта", [DataRequired(), Email(message="Неверный формат почты")]
+    )
+    password = PasswordField("Пароль",
+                             [DataRequired(), Length(min=5, message="Пароль должен быть не менее 5 символов")])
+    submit = SubmitField("Войти")
+
+
 class OrderForm(FlaskForm):
     name = StringField(
         "Ваше имя", [DataRequired(), Length(max=50, message="Слишком длинное имя")]
@@ -165,16 +173,15 @@ def seed():
 
 @app.route("/", methods=["GET", "POST"])
 def index_view():
+    # session.clear()
     categories = Category.query.all()
 
     if request.method == "POST":
         cart = session.get("cart", [])
         dish_id = int(request.form.get('dish'))
         cart.append(dish_id)
-        session["user_id"] = 1
         session['cart'] = cart
         # TODO flash()
-        # print(session['cart'])
         return redirect(url_for('cart_view'))
 
     return render_template("main.html", categories=categories)
@@ -182,8 +189,6 @@ def index_view():
 
 @app.route("/cart/", methods=["GET", "POST"])
 def cart_view():
-    print(session.get("cart"))
-
     form = OrderForm()
     if form.validate_on_submit():
         user = User.query.get_or_404(session["user_id"], "The user is not found.")
@@ -202,6 +207,7 @@ def cart_view():
         # TODO order.save()
         db.session.add(order)
         db.session.commit()
+        session.pop("cart")
         return redirect(url_for('ordered_view'))
 
     return render_template("cart.html", form=form)
@@ -222,19 +228,36 @@ def register_view():
     return render_template("register.html")
 
 
-@app.route("/auth/")
-def auth_view():
-    return render_template("auth.html")
-
-
-@app.route("/login/")
+@app.route("/login/", methods=["GET", "POST"])
 def login_view():
-    return render_template("login.html")
+    if session.get("user_id"):
+        return redirect(url_for('account_view'))
+
+    form = LoginForm()
+    form.email.render_kw = {'autofocus': True}
+
+    if request.method == "POST":
+        if form.validate_on_submit():
+            email = request.form.get("email")
+            password = request.form.get("password")
+
+            user = User.query.filter_by(mail=email).one_or_none()
+            if not user:
+                form.email.errors.append("Такого пользователя не существует.")
+            elif user.password != password:
+                form.password.errors.append("Неверный пароль.")
+            else:
+                session["user_id"] = user.id
+                return redirect(url_for('index_view'))
+
+    return render_template("login.html", form=form)
 
 
 @app.route("/logout/")
 def logout_view():
-    return redirect(url_for("auth_view"))
+    if session.get("user_id"):
+        session.pop("user_id")
+    return redirect(url_for("login_view"))
 
 
 @app.errorhandler(404)

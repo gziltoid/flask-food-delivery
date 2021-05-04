@@ -41,7 +41,7 @@
                     {{ form.email.label }}
                     {{ form.email(class_="form-control") }}
                     {% for err in form.email.errors %}
-                        <p>{{ err }}</p>
+                        {{ err }}
                     {% endfor %}
                 </div>
 
@@ -50,7 +50,7 @@
                         {{ form.phone.label }}
                         {{ form.phone(class_='form-control', placeholder='9261234567') }}
                         {% for err in form.phone.errors %}
-                            <p>{{ err }}</p>
+                            {{ err }}
                         {% endfor %}
                     </div>
                     <input type="hidden" value="875" name="order_summ">
