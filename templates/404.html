@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 
+{% include 'navbar.html' %}
+
 {% block container %}
-    <p>{{ error.code }} {{ error.description }}</p>
-    <p>Sorry, we couldn't find the page you requested, go to the <a href="{{ url_for('index_view') }}">Home Page</a>
-    </p>
+    <main class="container mt-3 mb-5">
+        <p style=font-size:30px>{{ error.code }}: {{ error.description }}</p>
+        <p>Sorry, we couldn't find the page you requested, go to the <a href="{{ url_for('index_view') }}">Home
+            Page</a>
+        </p>
+    </main>
 {% endblock %}

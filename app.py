@@ -191,7 +191,8 @@ def index_view():
 def cart_view():
     form = OrderForm()
     if form.validate_on_submit():
-        user = User.query.get_or_404(session["user_id"], "The user is not found.")
+        # FIXME check email
+        user = User.query.get_or_404(session.get('user_id'), "The user is not found.")
         order = Order(
             phone=form.phone.data,
             address=form.address.data,
@@ -234,7 +235,6 @@ def login_view():
         return redirect(url_for('account_view'))
 
     form = LoginForm()
-    form.email.render_kw = {'autofocus': True}
 
     if request.method == "POST":
         if form.validate_on_submit():

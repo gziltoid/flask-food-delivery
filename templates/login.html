@@ -4,7 +4,7 @@
     <div class="row">
         <div class="col-8 col-lg-4 offset-2 offset-lg-4">
             <form class="form-signin pt-5" method="post">
-                {{ form.csrf_token }}
+                {{ form.hidden_tag() }}
                 <div class="text-center mt-5 b-1">
                     <a href="{{ url_for('index_view') }}" style="text-decoration : none; color: #000;">
                         <img class="mb-4"
@@ -14,23 +14,24 @@
                             Stepik Delivery
                         </h1>
                     </a>
-                    <p class="h5 font-weight-light">Войдите, чтобы управлять</p>
+                    <p class="mb-5 h5 font-weight-light">Войдите, чтобы управлять</p>
                 </div>
-                <div class="mt-5 form-label-group">
-                    {{ form.email.label(class_="text-muted") }}
-                    {{ form.email(class_="form-control") }}
-                </div>
-                <div class="form-label-group">
-                    <br>
-                    {{ form.password.label(class_="text-muted") }}
-                    {{ form.password(class_="form-control") }}
-                </div>
-                {% for field in form.errors %}
-                    {% for error in form.errors[field] %}
-                        <span style="color: red">{{ error }}<br></span>
-                    {% endfor %}
+
+                {% for field in form if field.name not in ['csrf_token', 'submit'] %}
+                    <div class="form-label-group">
+                        {{ field.label(class_="text-muted") }}
+                        {% if field.errors %}
+                            {{ field(class_="form-control", autofocus=true) }}
+                            {% for err in field.errors %}
+                                <div style="color: red;">{{ err }}</div>
+                            {% endfor %}
+                        {% else %}
+                            {{ field(class_="form-control", autofocus=false) }}
+                        {% endif %}
+                        <br>
+                    </div>
                 {% endfor %}
-                <br>
+
                 <div class="checkbox mb-3"></div>
                 {{ form.submit(class_="btn btn-lg btn-danger btn-block") }}
             </form>
