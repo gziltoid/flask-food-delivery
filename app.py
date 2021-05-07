@@ -12,7 +12,7 @@ from sqlalchemy import func
 from wtforms.fields.core import StringField
 from wtforms.fields.html5 import EmailField, TelField
 from wtforms.fields.simple import SubmitField, PasswordField
-from wtforms.validators import DataRequired, Length, Email
+from wtforms.validators import DataRequired, Length, Email, EqualTo
 
 load_dotenv(find_dotenv())
 
@@ -109,6 +109,17 @@ class LoginForm(FlaskForm):
     password = PasswordField("Пароль",
                              [DataRequired(), Length(min=5, message="Пароль должен быть не менее 5 символов")])
     submit = SubmitField("Войти")
+
+
+class RegistrationForm(FlaskForm):
+    email = EmailField(
+        "Электропочта", [DataRequired(), Email(message="Неверный формат почты")])
+    password = PasswordField("Пароль",
+                             [DataRequired(),
+                              Length(min=5, message="Пароль должен быть не менее 5 символов"),
+                              EqualTo("confirm_password", message="Пароли не совпадают")])
+    confirm_password = PasswordField("Повторите пароль", [DataRequired()])
+    submit = SubmitField("Зарегистрироваться")
 
 
 class OrderForm(FlaskForm):
@@ -224,9 +235,24 @@ def account_view():
     return render_template("account.html")
 
 
-@app.route("/register/")
+@app.route("/register/", methods=["GET", "POST"])
 def register_view():
-    return render_template("register.html")
+    form = RegistrationForm()
+
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+
+        user_exists = User.query.filter_by(mail=email).one_or_none()
+        if user_exists:
+            form.email.errors.append("Такой пользователь уже существует.")
+        else:
+            user = User(mail=email, password=password)
+            db.session.add(user)
+            db.session.commit()
+            return redirect(url_for('login_view'))
+
+    return render_template("register.html", form=form)
 
 
 @app.route("/login/", methods=["GET", "POST"])
@@ -236,19 +262,18 @@ def login_view():
 
     form = LoginForm()
 
-    if request.method == "POST":
-        if form.validate_on_submit():
-            email = request.form.get("email")
-            password = request.form.get("password")
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
 
-            user = User.query.filter_by(mail=email).one_or_none()
-            if not user:
-                form.email.errors.append("Такого пользователя не существует.")
-            elif user.password != password:
-                form.password.errors.append("Неверный пароль.")
-            else:
-                session["user_id"] = user.id
-                return redirect(url_for('index_view'))
+        user = User.query.filter_by(mail=email).one_or_none()
+        if not user:
+            form.email.errors.append("Такого пользователя не существует.")
+        elif user.password != password:
+            form.password.errors.append("Неверный пароль.")
+        else:
+            session["user_id"] = user.id
+            return redirect(url_for('index_view'))
 
     return render_template("login.html", form=form)
 
