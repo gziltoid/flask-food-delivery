@@ -4,6 +4,8 @@ import sys
 
 from dotenv import load_dotenv, find_dotenv
 from flask import Flask, render_template, redirect, url_for, request, session
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
@@ -18,6 +20,7 @@ load_dotenv(find_dotenv())
 
 app = Flask(__name__)
 csrf = CSRFProtect(app)
+
 
 DB_URI = os.getenv("DATABASE_URL")
 if DB_URI.startswith("postgres://"):
@@ -58,6 +61,9 @@ class User(db.Model):
     # address = db.Column(db.String, nullable=False)
     orders = db.relationship("Order", back_populates="user")
 
+    def __repr__(self):
+        return self.mail
+
 
 class Dish(db.Model):
     __tablename__ = "dishes"
@@ -74,6 +80,9 @@ class Dish(db.Model):
         "Order", secondary=orders_dishes_association, back_populates="dishes"
     )
 
+    def __repr__(self):
+        return self.title
+
 
 class Category(db.Model):
     __tablename__ = "categories"
@@ -83,6 +92,9 @@ class Category(db.Model):
     dishes = db.relationship(
         "Dish", secondary=categories_dishes_association, back_populates="categories"
     )
+
+    def __repr__(self):
+        return self.title
 
 
 class Order(db.Model):
@@ -101,13 +113,54 @@ class Order(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     user = db.relationship("User", back_populates="orders")
 
+    def __repr__(self):
+        return str(self.id)
+
+
+class UserView(ModelView):
+    column_list = ['mail', 'orders']
+    column_searchable_list = ['mail']
+    column_filters = ['mail']
+
+    page_size = 20
+
+
+class DishView(ModelView):
+    column_list = ['title', 'categories', 'price', 'description']
+    column_searchable_list = ['title', 'description', 'price']
+    column_filters = ['title', 'description']
+    column_sortable_list = ['title', 'price']
+
+    page_size = 20
+
+
+class CategoryView(ModelView):
+    column_list = ['title', 'dishes']
+    column_searchable_list = ['title']
+    column_filters = ['title']
+
+
+class OrderView(ModelView):
+    column_list = ['order_date', 'user', 'status', 'total', 'dishes', 'phone', 'address']
+    column_sortable_list = ['order_date', ('user', 'user.mail'), 'status', 'total']
+    column_searchable_list = ['status', 'phone', 'address']
+    page_size = 25
+
+
+admin = Admin(app)
+
+admin.add_view(UserView(User, db.session, name='Пользователи'))
+admin.add_view(DishView(Dish, db.session, name='Блюда'))
+admin.add_view(CategoryView(Category, db.session, name='Категории блюд'))
+admin.add_view(OrderView(Order, db.session, name='Заказы'))
+
 
 class LoginForm(FlaskForm):
     email = EmailField(
         "Электропочта", [DataRequired(), Email(message="Неверный формат почты")]
     )
     password = PasswordField("Пароль",
-                             [DataRequired(), Length(min=5, message="Пароль должен быть не менее 5 символов")])
+                             [DataRequired(), Length(min=8, message="Пароль должен быть не менее 8 символов")])
     submit = SubmitField("Войти")
 
 
@@ -116,7 +169,7 @@ class RegistrationForm(FlaskForm):
         "Электропочта", [DataRequired(), Email(message="Неверный формат почты")])
     password = PasswordField("Пароль",
                              [DataRequired(),
-                              Length(min=5, message="Пароль должен быть не менее 5 символов"),
+                              Length(min=8, message="Пароль должен быть не менее 8 символов"),
                               EqualTo("confirm_password", message="Пароли не совпадают")])
     confirm_password = PasswordField("Повторите пароль", [DataRequired()])
     submit = SubmitField("Зарегистрироваться")
