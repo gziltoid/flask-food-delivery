@@ -46,7 +46,7 @@ def upgrade():
     )
     op.create_table('orders',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('order_date', sa.String(), nullable=False),
+    sa.Column('date', sa.DateTime(), nullable=False),
     sa.Column('total', sa.Integer(), nullable=False),
     sa.Column('status', sa.String(), nullable=False),
     sa.Column('mail', sa.String(), nullable=False),
@@ -54,8 +54,7 @@ def upgrade():
     sa.Column('address', sa.String(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('mail')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('orders_dishes',
     sa.Column('order_id', sa.Integer(), nullable=True),

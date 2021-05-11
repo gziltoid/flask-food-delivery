@@ -21,7 +21,6 @@ load_dotenv(find_dotenv())
 app = Flask(__name__)
 csrf = CSRFProtect(app)
 
-
 DB_URI = os.getenv("DATABASE_URL")
 if DB_URI.startswith("postgres://"):
     DB_URI = DB_URI.replace("postgres://", "postgresql://", 1)
@@ -101,7 +100,7 @@ class Order(db.Model):
     __tablename__ = "orders"
 
     id = db.Column(db.Integer, primary_key=True)
-    order_date = db.Column(db.DateTime, default=func.now())
+    date = db.Column(db.DateTime, default=func.now())
     total = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String, nullable=False)
     mail = db.Column(db.String, nullable=False)
@@ -141,8 +140,8 @@ class CategoryView(ModelView):
 
 
 class OrderView(ModelView):
-    column_list = ['order_date', 'user', 'status', 'total', 'dishes', 'phone', 'address']
-    column_sortable_list = ['order_date', ('user', 'user.mail'), 'status', 'total']
+    column_list = ['date', 'user', 'status', 'total', 'dishes', 'phone', 'address']
+    column_sortable_list = ['date', ('user', 'user.mail'), 'status', 'total']
     column_searchable_list = ['status', 'phone', 'address']
     page_size = 25
 
@@ -285,7 +284,12 @@ def ordered_view():
 
 @app.route("/account/")
 def account_view():
-    return render_template("account.html")
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('index_view'))
+
+    orders = User.query.get_or_404(user_id).orders
+    return render_template("account.html", orders=orders)
 
 
 @app.route("/register/", methods=["GET", "POST"])
