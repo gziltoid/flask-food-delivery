@@ -3,14 +3,34 @@ import os
 import sys
 
 from dotenv import load_dotenv, find_dotenv
-from flask import Flask, render_template, redirect, url_for, request, session
+from flask import (
+    Flask,
+    render_template,
+    redirect,
+    url_for,
+    request,
+    session,
+    flash,
+    abort,
+)
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
+from flask_admin.helpers import is_safe_url
+from flask_login import (
+    LoginManager,
+    login_user,
+    logout_user,
+    login_required,
+    current_user,
+    UserMixin,
+)
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_wtf.form import FlaskForm
 from sqlalchemy import func
+from sqlalchemy_utils import ChoiceType
+from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms.fields.core import StringField
 from wtforms.fields.html5 import EmailField, TelField
 from wtforms.fields.simple import SubmitField, PasswordField
@@ -20,6 +40,17 @@ load_dotenv(find_dotenv())
 
 app = Flask(__name__)
 csrf = CSRFProtect(app)
+
+login_manager = LoginManager(app)
+login_manager.login_view = "login_view"
+login_manager.login_message_category = "warning"
+login_manager.login_message = "Авторизуйтесь для доступа к странице"
+
+
+@login_manager.user_loader
+def load_user(uid):
+    return User.query.get_or_404(uid)
+
 
 DB_URI = os.getenv("DATABASE_URL")
 if DB_URI.startswith("postgres://"):
@@ -50,18 +81,34 @@ orders_dishes_association = db.Table(
 )
 
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
-    # name = db.Column(db.String(50), nullable=False)
-    mail = db.Column(db.String, nullable=False, unique=True)
-    password = db.Column(db.String, nullable=False)
-    # address = db.Column(db.String, nullable=False)
+    name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String, nullable=False, unique=True)
+    password_hash = db.Column(db.String, nullable=False)
     orders = db.relationship("Order", back_populates="user")
+    is_admin = db.Column(db.Boolean, nullable=False, default=False)
+
+    @property
+    def password(self):
+        raise AttributeError("Prohibited")
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def password_valid(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        return self
 
     def __repr__(self):
-        return self.mail
+        return self.email
 
 
 class Dish(db.Model):
@@ -96,14 +143,20 @@ class Category(db.Model):
         return self.title
 
 
+OrderStatusType = [
+    ("New", "Новый"),
+    ("Processing", "Обрабатывается"),
+    ("Completed", "Выполнен"),
+]
+
+
 class Order(db.Model):
     __tablename__ = "orders"
 
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime, default=func.now())
+    date = db.Column(db.DateTime, default=func.now(), nullable=False)
     total = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.String, nullable=False)
-    mail = db.Column(db.String, nullable=False)
+    status = db.Column(ChoiceType(OrderStatusType), nullable=False, default="New")
     phone = db.Column(db.String(15), nullable=False)
     address = db.Column(db.String, nullable=False)
     dishes = db.relationship(
@@ -112,64 +165,92 @@ class Order(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     user = db.relationship("User", back_populates="orders")
 
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        return self
+
     def __repr__(self):
         return str(self.id)
 
 
-class UserView(ModelView):
-    column_list = ['mail', 'orders']
-    column_searchable_list = ['mail']
-    column_filters = ['mail']
+@app.before_request
+def admin_access():
+    if "admin" in request.url:
+        if not (current_user.is_authenticated and current_user.is_admin):
+            return redirect(url_for("login_view"))
 
+
+class UserView(ModelView):
+    column_list = ["email", "name", "orders"]
+    column_searchable_list = ["email", "name"]
+    column_filters = ["email", "name"]
     page_size = 20
 
 
 class DishView(ModelView):
-    column_list = ['title', 'categories', 'price', 'description']
-    column_searchable_list = ['title', 'description', 'price']
-    column_filters = ['title', 'description']
-    column_sortable_list = ['title', 'price']
-
+    column_list = ["title", "price", "description", "categories"]
+    column_searchable_list = ["title", "description", "price"]
+    column_filters = ["title", "description"]
+    column_sortable_list = ["title", "price"]
     page_size = 20
 
 
 class CategoryView(ModelView):
-    column_list = ['title', 'dishes']
-    column_searchable_list = ['title']
-    column_filters = ['title']
+    column_list = ["title", "dishes"]
+    column_searchable_list = ["title"]
+    column_filters = ["title"]
 
 
 class OrderView(ModelView):
-    column_list = ['date', 'user', 'status', 'total', 'dishes', 'phone', 'address']
-    column_sortable_list = ['date', ('user', 'user.mail'), 'status', 'total']
-    column_searchable_list = ['status', 'phone', 'address']
+    column_list = ["date", "user", "total", "dishes", "phone", "address", "status"]
+    column_sortable_list = ["date", ("user", "user.email"), "total"]
+    column_filters = ["phone", "address"]
+    column_searchable_list = ["phone", "address"]
     page_size = 25
 
 
 admin = Admin(app)
 
-admin.add_view(UserView(User, db.session, name='Пользователи'))
-admin.add_view(DishView(Dish, db.session, name='Блюда'))
-admin.add_view(CategoryView(Category, db.session, name='Категории блюд'))
-admin.add_view(OrderView(Order, db.session, name='Заказы'))
+admin.add_view(UserView(User, db.session, name="Пользователи"))
+admin.add_view(DishView(Dish, db.session, name="Блюда"))
+admin.add_view(CategoryView(Category, db.session, name="Категории блюд"))
+admin.add_view(OrderView(Order, db.session, name="Заказы"))
 
 
 class LoginForm(FlaskForm):
     email = EmailField(
         "Электропочта", [DataRequired(), Email(message="Неверный формат почты")]
     )
-    password = PasswordField("Пароль",
-                             [DataRequired(), Length(min=8, message="Пароль должен быть не менее 8 символов")])
+    password = PasswordField(
+        "Пароль",
+        [
+            DataRequired(),
+            Length(min=5, message="Пароль должен быть не менее 5 символов"),
+        ],
+    )
     submit = SubmitField("Войти")
 
 
 class RegistrationForm(FlaskForm):
+    name = StringField(
+        "Имя",
+        [
+            DataRequired(),
+            Length(max=50, message="Имя должно быть не более 50 символов"),
+        ],
+    )
     email = EmailField(
-        "Электропочта", [DataRequired(), Email(message="Неверный формат почты")])
-    password = PasswordField("Пароль",
-                             [DataRequired(),
-                              Length(min=8, message="Пароль должен быть не менее 8 символов"),
-                              EqualTo("confirm_password", message="Пароли не совпадают")])
+        "Электропочта", [DataRequired(), Email(message="Неверный формат почты")]
+    )
+    password = PasswordField(
+        "Пароль",
+        [
+            DataRequired(),
+            Length(min=5, message="Пароль должен быть не менее 5 символов"),
+            EqualTo("confirm_password", message="Пароли не совпадают"),
+        ],
+    )
     confirm_password = PasswordField("Повторите пароль", [DataRequired()])
     submit = SubmitField("Зарегистрироваться")
 
@@ -180,9 +261,6 @@ class OrderForm(FlaskForm):
     )
     address = StringField(
         "Адрес", [DataRequired(), Length(max=200, message="Слишком длинный адрес")]
-    )
-    email = EmailField(
-        "Электропочта", [DataRequired(), Email(message="Неверный формат почты")]
     )
     phone = TelField(
         "Телефон",
@@ -200,7 +278,7 @@ class OrderForm(FlaskForm):
 
 def load_data_from_csv(filename):
     try:
-        with open(filename, newline='', encoding='utf-8') as f:
+        with open(filename, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             data = []
             for row in reader:
@@ -226,7 +304,7 @@ def seed():
             title=d["title"],
             price=d["price"],
             description=d["description"],
-            picture=d["picture"]
+            picture=d["picture"],
         )
         cat = Category.query.filter(Category.id == d["category_id"]).one()
         dish.categories.append(cat)
@@ -236,86 +314,102 @@ def seed():
 
 @app.route("/", methods=["GET", "POST"])
 def index_view():
-    # session.clear()
     categories = Category.query.all()
 
     if request.method == "POST":
-        cart = session.get("cart", [])
-        dish_id = int(request.form.get('dish'))
-        cart.append(dish_id)
-        session['cart'] = cart
-        # TODO flash()
-        return redirect(url_for('cart_view'))
+        cart = session.get("cart", {"items": [], "total": 0})
+        dish_id = int(request.form.get("dish_id"))
+        if dish_id not in cart.get("items"):
+            cart["items"].append(dish_id)
+            cart["total"] += Dish.query.get(dish_id).price
+            session["cart"] = cart
+            return redirect(url_for("index_view"))
 
     return render_template("main.html", categories=categories)
 
 
 @app.route("/cart/", methods=["GET", "POST"])
 def cart_view():
+    cart = session.get("cart", {"items": [], "total": 0})
+    cart_items = []
+    for item_id in cart.get("items"):
+        cart_items.append(Dish.query.get(item_id))
+
     form = OrderForm()
-    if form.validate_on_submit():
-        # FIXME check email
-        user = User.query.get_or_404(session.get('user_id'), "The user is not found.")
+
+    if form.validate_on_submit() and cart_items:
+        user = User.query.get_or_404(current_user.id, "The user is not found.")
         order = Order(
             phone=form.phone.data,
             address=form.address.data,
-            mail=form.email.data,
-            total=request.form.get('order_summ'),
-            status='Принято',
-            user_id=user.id
+            total=sum(cart_item.price for cart_item in cart_items),
+            user_id=user.id,
         )
-        cart = session.get("cart", [])
-        for item_id in cart:
-            dish = Dish.query.get_or_404(item_id, "The dish is not found.")
+        for item_id in cart.get("items"):
+            dish = Dish.query.get(item_id)
             order.dishes.append(dish)
-        # TODO order.save()
-        db.session.add(order)
-        db.session.commit()
-        session.pop("cart")
-        return redirect(url_for('ordered_view'))
+        order.save()
+        session.pop("cart", None)
+        return redirect(url_for("ordered_view"))
 
-    return render_template("cart.html", form=form)
+    return render_template("cart.html", form=form, cart=cart_items)
+
+
+@app.route("/delete-from-cart/", methods=["POST"])
+def delete_from_cart_view():
+    dish_id = int(request.form.get("dish_id"))
+    cart = session.get("cart", {"items": [], "total": 0})
+    cart.get("items").remove(dish_id)
+    cart["total"] -= Dish.query.get(dish_id).price
+    session["cart"] = cart
+    flash("Блюдо удалено из корзины", "warning")
+    return redirect(url_for("cart_view"))
 
 
 @app.route("/ordered/")
+@login_required
 def ordered_view():
     return render_template("ordered.html")
 
 
 @app.route("/account/")
+@login_required
 def account_view():
-    user_id = session.get('user_id')
-    if not user_id:
-        return redirect(url_for('index_view'))
-
-    orders = User.query.get_or_404(user_id).orders
+    orders = User.query.get_or_404(current_user.id).orders
     return render_template("account.html", orders=orders)
 
 
 @app.route("/register/", methods=["GET", "POST"])
 def register_view():
+    if current_user.is_authenticated:
+        return redirect(url_for("account_view"))
+
     form = RegistrationForm()
 
     if form.validate_on_submit():
+        name = form.name.data
         email = form.email.data
         password = form.password.data
 
-        user_exists = User.query.filter_by(mail=email).one_or_none()
+        user_exists = User.query.filter_by(email=email).one_or_none()
         if user_exists:
             form.email.errors.append("Такой пользователь уже существует.")
         else:
-            user = User(mail=email, password=password)
-            db.session.add(user)
-            db.session.commit()
-            return redirect(url_for('login_view'))
+            user = User(name=name, email=email, password=password)
+            user.save()
+            login_user(user)
+            next_ = request.args.get("next")
+            if next_ and not is_safe_url(next_):
+                return abort(400)
+            return redirect(next_ or url_for("account_view"))
 
     return render_template("register.html", form=form)
 
 
 @app.route("/login/", methods=["GET", "POST"])
 def login_view():
-    if session.get("user_id"):
-        return redirect(url_for('account_view'))
+    if current_user.is_authenticated:
+        return redirect(url_for("account_view"))
 
     form = LoginForm()
 
@@ -323,22 +417,25 @@ def login_view():
         email = form.email.data
         password = form.password.data
 
-        user = User.query.filter_by(mail=email).one_or_none()
+        user = User.query.filter_by(email=email).one_or_none()
         if not user:
             form.email.errors.append("Такого пользователя не существует.")
-        elif user.password != password:
+        elif not user.password_valid(password):
             form.password.errors.append("Неверный пароль.")
         else:
-            session["user_id"] = user.id
-            return redirect(url_for('index_view'))
+            login_user(user)
+            next_ = request.args.get("next")
+            if next_ and not is_safe_url(next_):
+                return abort(400)
+            return redirect(next_ or url_for("index_view"))
 
     return render_template("login.html", form=form)
 
 
 @app.route("/logout/")
 def logout_view():
-    if session.get("user_id"):
-        session.pop("user_id")
+    if current_user.is_authenticated:
+        logout_user()
     return redirect(url_for("login_view"))
 
 

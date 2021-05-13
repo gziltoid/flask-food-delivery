@@ -3,9 +3,17 @@
 {% include 'navbar.html' %}
 
 {% block container %}
+    <nav aria-label="breadcrumb" class="mt-4 ml-n3 h5">
+        <ol class="breadcrumb" style="background-color: white;">
+            <li class="breadcrumb-item"><a href="{{ url_for('index_view') }}">Каталог</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Аккаунт</li>
+        </ol>
+    </nav>
+
     <section class="row">
         <div class="col-12 col-lg-8">
-            <h1 class="h3 my-5">Личный кабинет. Заказы</h1>
+            <h1 class="h3 my-4">Личный кабинет. Заказы</h1>
+            <h1 class="h5 text-muted">Здравствуйте, {{ current_user.name }}!</h1>
             {% for order in orders|sort(attribute='date', reverse=True) %}
                 <div class="my-4 card">
                     <ul class="list-group list-group-flush">
