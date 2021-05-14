@@ -4,7 +4,7 @@
         <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
             <li>
                 <a href="{{ url_for('index_view') }}" class="navbar-brand">
-                    <p class=" h5 my-2 text-white bg-dark">Stepik Delivery</p>
+                    <p class="h5 my-2 text-white bg-dark">Stepik Delivery</p>
                 </a>
             </li>
         </ul>
@@ -12,7 +12,7 @@
             <a href="{{ url_for('cart_view') }}" style="text-decoration : none">
                 <p class="my-2 text-white bg-dark">
                     <img class="mr-1 mt-n1"
-                         src="/static/pictures/cart1.png"
+                         src="{{ url_for('static', filename='pictures/cart1.png') }}"
                          alt="" width="24" height="25">
                     Корзина
                     {% if session['cart'] and session['cart']['items']|length > 0 %}

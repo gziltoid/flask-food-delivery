@@ -53,7 +53,7 @@ def cart_view():
     form = OrderForm()
 
     if form.validate_on_submit() and cart_items:
-        user = User.query.get_or_404(current_user.id, "The user is not found.")
+        user = User.query.get(current_user.id)
         order = Order(
             phone=form.phone.data,
             address=form.address.data,
@@ -139,6 +139,8 @@ def login_view():
             form.password.errors.append("Неверный пароль.")
         else:
             login_user(user)
+            if current_user.is_admin:
+                return redirect("/admin")
             next_ = request.args.get("next")
             if next_ and not is_safe_url(next_):
                 return abort(400)
@@ -156,9 +158,9 @@ def logout_view():
 
 @app.errorhandler(404)
 def page_not_found(error):
-    return render_template("404.html", error=error), 404
+    return render_template("error.html", error=error, message='Страница не найдена'), 404
 
 
 @app.errorhandler(500)
 def page_server_error(error):
-    return f"Something happened but we're fixing it: {error}", 500
+    return render_template("error.html", error=error, message='Мы уже работаем над этим'), 500
