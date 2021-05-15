@@ -1,1 +1,1 @@
-web: gunicorn run:app --log-file -
+web: gunicorn food_delivery:app --log-file -
