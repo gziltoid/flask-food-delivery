@@ -29,7 +29,7 @@
                                           class="align-self-start mt-auto">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <input class="form-control" type="hidden" name="dish_id" value="{{ dish.id }}">
-                                        {% if session['cart'] and (dish.id in session['cart']['items']) %}
+                                        {% if session['cart'] and (dish.id|string in session['cart']['items']) %}
                                             <input type="submit" class="btn btn-success" disabled
                                                    value="Добавлено"/>
                                         {% else %}

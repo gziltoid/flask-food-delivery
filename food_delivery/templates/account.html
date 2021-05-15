@@ -20,7 +20,7 @@
                         <li class="list-group-item">
                             <div class="row">
                                 <div class="col-7 col-lg-9">
-                                    <span class="h5 font-weight-bold">{{ order.date.strftime('%d-%m-%Y %H:%M') }}</span>
+                                    <span class="h5 font-weight-bold">{{ order.date|date_format_ru }}</span>
                                     <span class="h5">- {{ order.total }} P</span>
                                 </div>
                                 <div class="col-3 col-lg-2 ml-5 py-2 badge badge-light text-wrap">

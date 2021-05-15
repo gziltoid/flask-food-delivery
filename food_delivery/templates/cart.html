@@ -10,8 +10,6 @@
         </ol>
     </nav>
 
-    {#    <h1 class="h3 my-4">Корзина</h1>#}
-
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -24,7 +22,8 @@
 
     {% if not current_user.is_authenticated %}
         <div class="alert alert-warning" role="alert">Чтобы сделать заказ –
-            <a href="{{ url_for('login_view', next=request.path) }}">войдите</a> или <a href="{{ url_for("register_view", next=request.path) }}">зарегистрируйтесь</a>
+            <a href="{{ url_for('login_view', next=request.path) }}">войдите</a> или <a
+                    href="{{ url_for("register_view", next=request.path) }}">зарегистрируйтесь</a>
         </div>
     {% endif %}
 
@@ -80,8 +79,6 @@
                             <td>1</td>
                             <td>{{ dish.price }}</td>
                             <td>
-                                {# <a class="text-danger" href="{{ url_for('delete_from_cart_view', dish_id=dish.id) }}">Удалить</a>#}
-
                                 <form action="{{ url_for('delete_from_cart_view') }}" method="post">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <input type="hidden" name="dish_id" value="{{ dish.id }}">

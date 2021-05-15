@@ -2,7 +2,6 @@ import csv
 import sys
 
 from food_delivery.models import db, Category, Dish
-from food_delivery import app
 
 
 def load_data_from_csv(filename):
@@ -18,14 +17,13 @@ def load_data_from_csv(filename):
         return data
 
 
-@app.cli.command("seed")
 def seed():
     """ Add seed data to the database. """
-    categories = load_data_from_csv("food_delivery/db-seed-data/delivery_categories.csv")
-    dishes = load_data_from_csv("food_delivery/db-seed-data/delivery_items.csv")
+    categories = load_data_from_csv("./db-seed-data/delivery_categories.csv")
+    dishes = load_data_from_csv("./db-seed-data/delivery_items.csv")
 
-    for cat in categories:
-        db.session.add(Category(title=cat["title"]))
+    for c in categories:
+        db.session.add(Category(title=c["title"]))
     db.session.commit()
 
     for d in dishes:
@@ -35,7 +33,7 @@ def seed():
             description=d["description"],
             picture=d["picture"],
         )
-        cat = Category.query.filter(Category.id == d["category_id"]).one()
-        dish.categories.append(cat)
+        c = Category.query.filter(Category.id == d["category_id"]).one()
+        dish.categories.append(c)
         db.session.add(dish)
     db.session.commit()

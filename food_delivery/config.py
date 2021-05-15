@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -9,7 +10,7 @@ if DB_URI.startswith("postgres://"):
 
 
 class Config:
-    DEBUG = True
+    DEBUG = os.getenv("DEBUG")
     SQLALCHEMY_ECHO = False
     SECRET_KEY = os.getenv("SECRET_KEY")
     SQLALCHEMY_DATABASE_URI = DB_URI

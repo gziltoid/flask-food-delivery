@@ -11,6 +11,7 @@ from food_delivery.admin import init_admin
 from food_delivery.config import Config
 from food_delivery.models import db
 
+
 app = Flask(__name__)
 
 app.config.from_object(Config)
@@ -23,6 +24,7 @@ admin_manager.init_app(app)
 init_admin(admin_manager)
 
 from food_delivery.views import *
+from food_delivery import filters
 
 login_manager = LoginManager(app)
 login_manager.login_view = "login_view"
@@ -32,5 +34,10 @@ login_manager.login_message = "Авторизуйтесь для доступа 
 
 @login_manager.user_loader
 def load_user(uid):
-    return User.query.get_or_404(uid)
+    return User.query.get(uid)
+
+@app.cli.command("seed")
+def seed():
+    from food_delivery.seeder import seed
+    seed()
 
