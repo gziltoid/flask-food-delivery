@@ -15,14 +15,14 @@
 
                     {% for dish in category.dishes %}
 
-                        <div class="col-12 col-md-4 mb-4 ">
-                            <div class="card mb-3 h-100">
+                        <div class="col-12 col-md-4 mb-4 d-flex">
+                            <div class="card mb-3">
 
                                 <img src="{{ url_for('static', filename='pictures/') }}{{ dish.picture }}" width="300"
                                      height="200"
                                      class="card-img-top img-fluid" alt="">
 
-                                <div class="card-body d-flex flex-column">
+                                <div class="card-body d-flex d-flex flex-column">
                                     <h4 class="h5 card-title">{{ dish.title }}</h4>
                                     <p class="card-text">{{ dish.description }}</p>
                                     <form action="{{ url_for('index_view') }}" method="post"
