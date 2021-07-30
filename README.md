@@ -1,6 +1,6 @@
 # Food Delivery Service with Flask and SQLAlchemy
 
-Implemented the backend part (including jinja2 templates and the DB schema) of a website for ordering food, and an admin section.
+Implemented the backend part of a website for ordering food, including the admin section and account page. Written using Flask, Jinja2, SQLAchemy/Alembic (targeting PostgreSQL).
 
 To create and populate database before the first run use the following commands:
 
@@ -12,6 +12,5 @@ To launch the app use:
 
 `$ flask run`
 
-or
 
-`$ gunicorn food_delivery:app`
+
